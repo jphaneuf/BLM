@@ -2,14 +2,16 @@ import sys
 from PyQt4 import QtGui,QtCore
 
 class dataFile(QtGui.QHBoxLayout):
-	def __init__(self):
+	def __init__(self,fileName):
 		super(dataFile,self).__init__()
+		self.fileName = fileName
 		self.addStretch(1)
 		self.wg = QtGui.QWidget()
-		self.lbl = QtGui.QLabel("file",self.wg)
+		self.lbl = QtGui.QLabel(fileName,self.wg)
 		self.pc = QtGui.QCheckBox("yes",self.wg)		
-		self.addWidget(self.lbl)
+		self.addWidget(self.lbl) 
 		self.addWidget(self.pc)
+
 class fileManager(QtGui.QVBoxLayout):
 	def __init__(self):
 		super(fileManager,self).__init__()
@@ -22,13 +24,15 @@ class fileManager(QtGui.QVBoxLayout):
 		self.clearButton.clicked.connect(self.removeFiles)
 	def addFile(self):
 		fileName = QtGui.QFileDialog.getOpenFileName(QtGui.QMainWindow(),'Open file','./')
-		x = dataFile()
+		x = dataFile(fileName)
+		x.pc.stateChanged.connect(self.createPlotList)
 		self.addLayout(x)
 		self.files.append(x)
 	def removeFiles(self):
 		self.files = []
-	
-#fm = fileManager()
+	def createPlotList(self):
+		#create list of files selected for plotting
+		print	[x.fileName for x in self.files if x.pc.isChecked()]
 #class Example(QtGui.QMainWindow):
 class Example(QtGui.QWidget):
 	def __init__(self):
