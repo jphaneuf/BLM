@@ -11,6 +11,7 @@ x = io.AxonIO(r1dFile)
 blks = x.read()
 signal = blks[0].segments[0].analogsignals[0]
 s = np.array(signal.segment.analogsignals[0])
+#10mV/pA
 ##select datasets
 ##add
 ##plot/don't plot
