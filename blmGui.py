@@ -1,6 +1,14 @@
 import sys
 from PyQt4 import QtGui,QtCore
 from abfEda import dataManager
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+class mplCanvas(FigureCanvas):
+	def __init__(self):
+		fig = Figure()
+		self.axes = fig.add_subplot(111)
+		FigureCanvas.__init__(self,fig)
+		self.axes.hold(False)
 class comm(QtCore.QObject):
 	updateDataTrigger = QtCore.pyqtSignal()
 class dataFile(QtGui.QHBoxLayout):
@@ -14,16 +22,12 @@ class dataFile(QtGui.QHBoxLayout):
 		self.addWidget(self.lbl) 
 		self.addWidget(self.pc)
 class fileManager(QtGui.QVBoxLayout):
-#	updateDataTrigger = QtCore.pyqtSignal()
 	def __init__(self):
 		super(fileManager,self).__init__()
 		self.addButton = QtGui.QPushButton("Add File")
-		self.clearButton = QtGui.QPushButton("Clear Files")
 		self.addWidget(self.addButton)
-		self.addWidget(self.clearButton)
 		self.files = []
 		self.addButton.clicked.connect(self.addFile)
-		self.clearButton.clicked.connect(self.removeFiles)
 		self.c = comm()
 	def addFile(self):
 		fileName = QtGui.QFileDialog.getOpenFileName(QtGui.QMainWindow(),'Open file','./')
@@ -31,18 +35,15 @@ class fileManager(QtGui.QVBoxLayout):
 		x.pc.stateChanged.connect(self.createPlotList)
 		self.addLayout(x)
 		self.files.append(x)
-	def removeFiles(self):
-		self.files = []
 	def createPlotList(self):
-		#create list of files selected for plotting
 		self.plotList = [x.fileName for x in self.files if x.pc.isChecked()]
 		self.c.updateDataTrigger.emit()
-#class Example(QtGui.QMainWindow):
-class Example(QtGui.QWidget):
+class blmGui(QtGui.QWidget):
 	def __init__(self):
-		super(Example,self).__init__()
+		super(blmGui,self).__init__()
 		self.initUI()
 	def initUI(self):
+		self.mpl = mplCanvas()
 		self.fm = fileManager()
 		self.dm = dataManager()
 		self.fm.c.updateDataTrigger.connect(self.updateEverything)
@@ -52,16 +53,18 @@ class Example(QtGui.QWidget):
 		vbox.addStretch(1)
 		vbox.addLayout(hbox)
 		vbox.addLayout(self.fm)
+		vbox.addWidget(self.mpl)
 		self.setLayout(vbox)
-		self.setGeometry(300,300,350,150)
+		self.setGeometry(300,300,700,500)
 		self.setWindowTitle('Signal & slot')
 		self.show()
 	def updateEverything(self):
 		self.dm.updateCombinedSignal(self.fm.plotList)
+		self.mpl.axes.plot(self.dm.combinedSignal)
 
 def main():
 	app = QtGui.QApplication(sys.argv)
-	ex = Example()
+	ex = blmGui()
 	sys.exit(app.exec_())	
 
 if __name__ == '__main__':
