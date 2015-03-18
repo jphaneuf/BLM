@@ -1,6 +1,8 @@
 import sys
 from PyQt4 import QtGui,QtCore
-
+from abfEda import dataManager
+class comm(QtCore.QObject):
+	updateDataTrigger = QtCore.pyqtSignal()
 class dataFile(QtGui.QHBoxLayout):
 	def __init__(self,fileName):
 		super(dataFile,self).__init__()
@@ -11,8 +13,8 @@ class dataFile(QtGui.QHBoxLayout):
 		self.pc = QtGui.QCheckBox("yes",self.wg)		
 		self.addWidget(self.lbl) 
 		self.addWidget(self.pc)
-
 class fileManager(QtGui.QVBoxLayout):
+#	updateDataTrigger = QtCore.pyqtSignal()
 	def __init__(self):
 		super(fileManager,self).__init__()
 		self.addButton = QtGui.QPushButton("Add File")
@@ -22,6 +24,7 @@ class fileManager(QtGui.QVBoxLayout):
 		self.files = []
 		self.addButton.clicked.connect(self.addFile)
 		self.clearButton.clicked.connect(self.removeFiles)
+		self.c = comm()
 	def addFile(self):
 		fileName = QtGui.QFileDialog.getOpenFileName(QtGui.QMainWindow(),'Open file','./')
 		x = dataFile(fileName)
@@ -32,25 +35,29 @@ class fileManager(QtGui.QVBoxLayout):
 		self.files = []
 	def createPlotList(self):
 		#create list of files selected for plotting
-		print	[x.fileName for x in self.files if x.pc.isChecked()]
+		self.plotList = [x.fileName for x in self.files if x.pc.isChecked()]
+		self.c.updateDataTrigger.emit()
 #class Example(QtGui.QMainWindow):
 class Example(QtGui.QWidget):
 	def __init__(self):
 		super(Example,self).__init__()
 		self.initUI()
 	def initUI(self):
-		#QtGui.QFileDialog.getOpenFileName(self,'Open file','./')
-		fm = fileManager()
+		self.fm = fileManager()
+		self.dm = dataManager()
+		self.fm.c.updateDataTrigger.connect(self.updateEverything)
 		hbox = QtGui.QHBoxLayout()
 		hbox.addStretch(1)
 		vbox=QtGui.QVBoxLayout()
 		vbox.addStretch(1)
 		vbox.addLayout(hbox)
-		vbox.addLayout(fm)
+		vbox.addLayout(self.fm)
 		self.setLayout(vbox)
 		self.setGeometry(300,300,350,150)
 		self.setWindowTitle('Signal & slot')
 		self.show()
+	def updateEverything(self):
+		self.dm.updateCombinedSignal(self.fm.plotList)
 
 def main():
 	app = QtGui.QApplication(sys.argv)
