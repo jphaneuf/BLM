@@ -61,6 +61,7 @@ class blmGui(QtGui.QWidget):
 	def updateEverything(self):
 		self.dm.updateCombinedSignal(self.fm.plotList)
 		self.mpl.axes.plot(self.dm.combinedSignal)
+		self.mpl.draw()
 
 def main():
 	app = QtGui.QApplication(sys.argv)
