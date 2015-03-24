@@ -5,6 +5,7 @@ import numpy as np
 class dataManager:
 	def __init__(self):
         	self.combinedSignal = np.array([])
+		self.timeVector = np.array([])
         	self.threshold = 0
 	def updateCombinedSignal(self,listOfFiles):
 		self.combinedSignal = np.array([])
@@ -15,9 +16,11 @@ class dataManager:
 			signal = blks[0].segments[0].analogsignals[0]
 			s = np.array(signal.segment.analogsignals[0])
 			self.combinedSignal = np.concatenate([self.combinedSignal,s])			 
-		print len(self.combinedSignal)
+			self.samplePeriod = signal.sampling_period
+		self.timeVector = np.array(range(len(self.combinedSignal)))*self.samplePeriod
+		self.filterSignal()
 	def filterSignal(self):
-		pass
+		self.combinedSignal = np.abs(self.combinedSignal)
 	def integrateSignal(self):
 		pass
 	def getBaseline(self):
@@ -28,4 +31,15 @@ class dataManager:
 		pass
 	def getElapsedTime(self):
 		pass
-
+	def getSignalIndices(self,pminmax):
+		#take subset from sliders, get indices
+		pmin = pminmax[0] #% min
+		pmax = pminmax[1] #%		
+		slength = len(self.combinedSignal)
+		imin = np.round(pmin*slength/100)
+		imax = np.round(pmax*slength/100)
+		print pmin,pmax,slength,imin,imax
+		return [imin,imax]
+if __name__ == "__main__":
+	dm = dataManager()
+	dm.updateCombinedSignal(["/home/joe/knowledge/blm/BLM Membrane Example/Recording 2, 50Hz lowpass.abf"])

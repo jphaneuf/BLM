@@ -3,6 +3,10 @@ from PyQt4 import QtGui,QtCore
 from abfEda import dataManager
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+#1 add sliderz from/to.  on update.
+#2 add outputs
+#3 baseline?
+#4 text timeslicer
 class mplCanvas(FigureCanvas):
 	def __init__(self):
 		fig = Figure()
@@ -43,6 +47,8 @@ class blmGui(QtGui.QWidget):
 		super(blmGui,self).__init__()
 		self.initUI()
 	def initUI(self):
+		self.sliders = []
+		self.sliders = [QtGui.QSlider(parent=self,orientation=QtCore.Qt.Horizontal) for i in range(4)]
 		self.mpl = mplCanvas()
 		self.fm = fileManager()
 		self.dm = dataManager()
@@ -53,6 +59,12 @@ class blmGui(QtGui.QWidget):
 		vbox.addStretch(1)
 		vbox.addLayout(hbox)
 		vbox.addLayout(self.fm)
+		for sld,val in zip(self.sliders,[0,100,0,100]):
+			sld.sliderReleased.connect(self.updateWidgets)
+			sld.setRange(0,100)
+			sld.setValue(val)
+			vbox.addWidget(sld)
+		self.updateWidgets()
 		vbox.addWidget(self.mpl)
 		self.setLayout(vbox)
 		self.setGeometry(300,300,700,500)
@@ -60,9 +72,20 @@ class blmGui(QtGui.QWidget):
 		self.show()
 	def updateEverything(self):
 		self.dm.updateCombinedSignal(self.fm.plotList)
-		self.mpl.axes.plot(self.dm.combinedSignal)
+		self.updatePlot()
+	def updatePlot(self):
+		ss = self.dm.getSignalIndices(self.timeIndices)
+		self.mpl.axes.plot(self.dm.timeVector[ss[0]:ss[1]],self.dm.combinedSignal[ss[0]:ss[1]])
+		ss = self.dm.getSignalIndices(self.integralIndices)
+		self.mpl.axes.hold(True)
+		self.mpl.axes.axvline(ss[0])
+		self.mpl.axes.axvline(ss[1])
+		self.mpl.axes.hold(False)
 		self.mpl.draw()
-
+	def updateWidgets(self):
+		self.timeIndices = sorted([self.sliders[0].value(),self.sliders[1].value()])
+		self.integralIndices = sorted([self.sliders[2].value(),self.sliders[3].value()])
+		self.updatePlot()
 def main():
 	app = QtGui.QApplication(sys.argv)
 	ex = blmGui()
