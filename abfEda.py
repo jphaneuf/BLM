@@ -31,15 +31,15 @@ class dataManager:
 		pass
 	def getElapsedTime(self):
 		pass
-	def getSignalIndices(self,pminmax):
-		#take subset from sliders, get indices
-		pmin = pminmax[0] #% min
-		pmax = pminmax[1] #%		
+	def getSubsetSignal(self,minmax):
+		#take subset from sliders, and plot
+		pmin = minmax[0] #% min
+		pmax = minmax[1] #%		
 		slength = len(self.combinedSignal)
 		imin = np.round(pmin*slength/100)
 		imax = np.round(pmax*slength/100)
 		print pmin,pmax,slength,imin,imax
-		return [imin,imax]
+		return self.timeVector[imin:imax],self.combinedSignal[imin:imax]
 if __name__ == "__main__":
 	dm = dataManager()
 	dm.updateCombinedSignal(["/home/joe/knowledge/blm/BLM Membrane Example/Recording 2, 50Hz lowpass.abf"])
