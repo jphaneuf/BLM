@@ -9,6 +9,11 @@ class dataManager:
         	self.threshold = 0
 	def updateCombinedSignal(self,listOfFiles):
 		self.combinedSignal = np.array([])
+		import csv
+		with open('/home/joe/knowledge/blm/eggs.csv', 'rb') as csvfile:
+			spamreader = csv.reader(csvfile)
+			self.combinedSignal= np.array([float(row[0]) for row in spamreader])
+		"""		
 		for abfFile in listOfFiles:
 			print str(abfFile)
 			x = io.AxonIO(str(abfFile))
@@ -17,7 +22,10 @@ class dataManager:
 			s = np.array(signal.segment.analogsignals[0])
 			self.combinedSignal = np.concatenate([self.combinedSignal,s])			 
 			self.samplePeriod = signal.sampling_period
+		
 		self.timeVector = np.array(range(len(self.combinedSignal)))*self.samplePeriod
+		"""		
+		self.timeVector = np.array(range(len(self.combinedSignal)))
 		self.filterSignal()
 	def filterSignal(self):
 		self.combinedSignal = np.abs(self.combinedSignal)
