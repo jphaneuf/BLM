@@ -3,7 +3,7 @@ from matplotlib import pyplot as plt
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.widgets import Slider,Button
 import matplotlib.text as mtext
-
+import numpy as np
 class mplCanvas(FigureCanvas):
 	def __init__(self):
 		self.fig = Figure()
@@ -47,12 +47,15 @@ class mplCanvas(FigureCanvas):
 		self.i2.set_xdata(value*self.dataLength/100)
 		self.integrateData()
 	def updateXlim(self):
-		self.xlims = sorted([self.x1*self.dataLength/100,self.x2*self.dataLength/100])
+		xlimMax = np.max(self.l.get_xdata())
+		#self.xlims = sorted([self.x1*self.dataLength/100,self.x2*self.dataLength/100])
+		self.xlims = sorted([self.x1*xlimMax/100,self.x2*xlimMax/100])		
 		self.axes.set_xlim(self.xlims)
 		try:
 			ymin = min(self.l.get_ydata()[int(self.xlims[0]):int(self.xlims[1])])
 			ymax = max(self.l.get_ydata()[int(self.xlims[0]):int(self.xlims[1])])		
-			self.axes.set_ylim(ymin,ymax)
+			self.axes.set_ylim(ymin-2,ymax+2)
+			print "ylimits" ,ymin,ymax
 		except:
 			pass	
 		self.updatePlot()
@@ -60,14 +63,15 @@ class mplCanvas(FigureCanvas):
 		self.dataLength = len(xd)
 		print self.dataLength
 		self.l.set_ydata(yd)
-		self.l.set_xdata(xd)
-		self.axes.set_ylim(min(yd),max(yd))
+    		self.l.set_xdata(xd)
+		self.axes.set_ylim(min(yd)-2,max(yd)+2)
 		self.updatePlot()
 	def updatePlot(self,**kwargs):
 		self.axes.relim()
 		self.axes.autoscale_view(scalex=False)
 		#self.axes.set_xlim(100)
-		self.draw()
+		#self.draw()
+		self.fig.canvas.draw()
 	def integrateData(self):
 		integral = 0
 		try:

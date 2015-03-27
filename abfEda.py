@@ -10,9 +10,11 @@ class dataManager:
 	def updateCombinedSignal(self,listOfFiles):
 		self.combinedSignal = np.array([])
 		import csv
+		"""
 		with open('/home/joe/knowledge/blm/eggs.csv', 'rb') as csvfile:
 			spamreader = csv.reader(csvfile)
 			self.combinedSignal= np.array([float(row[0]) for row in spamreader])
+		self.timeVector = np.array(range(len(self.combinedSignal)))
 		"""		
 		for abfFile in listOfFiles:
 			print str(abfFile)
@@ -22,10 +24,12 @@ class dataManager:
 			s = np.array(signal.segment.analogsignals[0])
 			self.combinedSignal = np.concatenate([self.combinedSignal,s])			 
 			self.samplePeriod = signal.sampling_period
+		##This data set is huge.  Just throw away some of it for now
+		##Will devise smoothing/reduction method later
+		reduction = 100
+		self.combinedSignal = self.combinedSignal[1::reduction]
+		self.timeVector = np.array(range(len(self.combinedSignal)))*self.samplePeriod*reduction		
 		
-		self.timeVector = np.array(range(len(self.combinedSignal)))*self.samplePeriod
-		"""		
-		self.timeVector = np.array(range(len(self.combinedSignal)))
 		self.filterSignal()
 	def filterSignal(self):
 		self.combinedSignal = np.abs(self.combinedSignal)
@@ -50,4 +54,6 @@ class dataManager:
 		return self.timeVector[imin:imax],self.combinedSignal[imin:imax]
 if __name__ == "__main__":
 	dm = dataManager()
-	dm.updateCombinedSignal(["/home/joe/knowledge/blm/BLM Membrane Example/Recording 2, 50Hz lowpass.abf"])
+	#dm.updateCombinedSignal(["/home/joe/knowledge/blm/BLM Membrane Example/Recording 2, 50Hz lowpass.abf"])
+	dm.updateCombinedSignal(["C:\Users\jphaneuf\Downloads\Recording 1.abf"]) 
+ 
