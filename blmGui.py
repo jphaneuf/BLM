@@ -54,7 +54,7 @@ class blmGui(QtGui.QWidget):
 		vbox.addWidget(self.mpl)
 		self.setLayout(vbox)
 		self.setGeometry(300,300,700,500)
-		self.setWindowTitle('Signal & slot')
+		self.setWindowTitle('BLM Analysis')
 		self.show()
 	def updateEverything(self):
 		self.dm.updateCombinedSignal(self.fm.plotList)

@@ -9,13 +9,6 @@ class dataManager:
         	self.threshold = 0
 	def updateCombinedSignal(self,listOfFiles):
 		self.combinedSignal = np.array([])
-		import csv
-		"""
-		with open('/home/joe/knowledge/blm/eggs.csv', 'rb') as csvfile:
-			spamreader = csv.reader(csvfile)
-			self.combinedSignal= np.array([float(row[0]) for row in spamreader])
-		self.timeVector = np.array(range(len(self.combinedSignal)))
-		"""		
 		for abfFile in listOfFiles:
 			print str(abfFile)
 			x = io.AxonIO(str(abfFile))
@@ -29,8 +22,7 @@ class dataManager:
 		reduction = 100
 		self.combinedSignal = self.combinedSignal[1::reduction]
 		self.timeVector = np.array(range(len(self.combinedSignal)))*self.samplePeriod*reduction		
-		
-		self.filterSignal()
+#		self.filterSignal()
 	def filterSignal(self):
 		self.combinedSignal = np.abs(self.combinedSignal)
 	def integrateSignal(self):
@@ -43,15 +35,6 @@ class dataManager:
 		pass
 	def getElapsedTime(self):
 		pass
-	def getSubsetSignal(self,minmax):
-		#take subset from sliders, and plot
-		pmin = minmax[0] #% min
-		pmax = minmax[1] #%		
-		slength = len(self.combinedSignal)
-		imin = np.round(pmin*slength/100)
-		imax = np.round(pmax*slength/100)
-		print pmin,pmax,slength,imin,imax
-		return self.timeVector[imin:imax],self.combinedSignal[imin:imax]
 if __name__ == "__main__":
 	dm = dataManager()
 	#dm.updateCombinedSignal(["/home/joe/knowledge/blm/BLM Membrane Example/Recording 2, 50Hz lowpass.abf"])
