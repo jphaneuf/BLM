@@ -3,7 +3,23 @@ from matplotlib import pyplot as plt
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.widgets import Slider,Button
 import matplotlib.text as mtext
+from matplotlib.axes import Axes as mpAx
 import numpy as np
+
+class sAx(mpAx):
+	##Slider axis: joins slider and axis into one
+	dataLength = 10
+	xlimMax= 10
+	xpos,ypos,width,height = 0.25,0,0.65,0.03
+	def __init__(self,fig,y,sName,sFunction):
+		mpAx.__init__(self,fig,rect=(self.xpos,y,self.width,self.height))
+		self.slider = Slider(self,sName,0,100,0)
+		self.slider.on_changed(sFunction)
+	def gi(self): # get Index
+		return int(self.slider.val*self.dataLength/100)
+	def gv(self):
+		return self.slider.val*self.xlimMax/100
+		
 class mplCanvas(FigureCanvas):
 	def __init__(self):
 		self.fig = Figure()
@@ -18,55 +34,32 @@ class mplCanvas(FigureCanvas):
 		self.axes.hold(False)
 		self.createSliders()
 		self.dataLength = 10
-		self.x1 = 0
-		self.x2 = self.dataLength
-		self.xlims = [0,0]
 		self.iText = self.fig.text(0.12,0.8,"Integral:0")		
-	def createSliders(self):
-		self.sax1 = self.fig.add_axes(( 0.25,0.1,0.65,0.03))
-		self.sax2 = self.fig.add_axes(( 0.25,0.075,0.65,0.03))
-		self.sax3 = self.fig.add_axes(( 0.25,0.05,0.65,0.03))
-		self.sax4 = self.fig.add_axes(( 0.25,0.025,0.65,0.03))
-		self.sax5 = self.fig.add_axes(( 0.25,0,0.65,0.03))		
-		self.stmin = Slider(self.sax1,'tmin %', 0, 100,valinit = 0)
-		self.stmin.on_changed(self.updateX1)
-		self.stmax = Slider(self.sax2,'tmax %', 0, 100,valinit = 0)
-		self.stmax.on_changed(self.updateX2)
-		self.sintmin = Slider(self.sax4,'integral min', 0, 100,valinit = 0.15)
-		self.sintmin.on_changed(self.updateInt1)
-		self.sintmax = Slider(self.sax5,'integral max', 0, 100,valinit = 0.15)
-		self.sintmax.on_changed(self.updateInt2)
-		self.sbase = Slider(self.sax3,'get Baseline',0,100,valinit=0)
-		self.sbase.on_changed(self.calculateBaseline)
+	def createSliders(self):	
+		self.sax1 = sAx(self.fig,0.1,"tmin %",self.updateXlim)
+		self.fig.add_axes(self.sax1)	
+		self.sax2 = sAx(self.fig,0.075,"tmax %",self.updateXlim)
+		self.fig.add_axes(self.sax2)	
+		self.sax3 = sAx(self.fig,0.05,"get Baseline",self.calculateBaseline)
+		self.fig.add_axes(self.sax3)
+		self.sax4 = sAx(self.fig,0.025,"integral min",self.integrateData)
+		self.fig.add_axes(self.sax4)
+		self.sax5 = sAx(self.fig,0.0,"integral max",self.integrateData)
+		self.fig.add_axes(self.sax5)
 	def calculateBaseline(self,value):
-		self.baseLineGrabber.set_xdata(value*self.xlimMax/100)
-		whereAt = int(value*self.dataLength/100)
+		self.baseLineGrabber.set_xdata(self.sax3.gv())
+		whereAt = self.sax3.gi()
 		self.baseLine = np.mean(self.l.get_ydata()[whereAt-5:whereAt])
 		self.integrateData()
-	def updateX1(self,value):
-		self.x1 = value
-		self.updateXlim()
-	def updateX2(self,value):
-		self.x2 = value
-		self.updateXlim()
-	def updateInt1(self,value): #Integral slider 1
-		self.i1.set_xdata(value*self.xlimMax/100)
-		self.integrateData()
-	def updateInt2(self,value): #Integral slider 2
-		self.i2.set_xdata(value*self.xlimMax/100)
-		self.integrateData()
-	def updateXlim(self):
-		self.xlimMax = np.max(self.l.get_xdata())
-		self.xlims = sorted([self.x1*self.xlimMax/100,self.x2*self.xlimMax/100])		
-		self.axes.set_xlim(self.xlims)
-		xslices = sorted([self.x1*self.dataLength/100,self.x2*self.dataLength/100])		
+	def updateXlim(self,sliderValue):
+		self.axes.set_xlim(sorted([self.sax1.gv(),self.sax2.gv()]))
 		try:
-			ymin = min(self.l.get_ydata()[int(self.xslices[0]):int(self.xslices[1])])
-			ymax = max(self.l.get_ydata()[int(self.xslices[0]):int(self.xslices[1])])		
+			xmin,xmax = sorted([self.sax1.gi(),self.sax2.gi()])		
+			ymin = min(self.l.get_ydata()[xmin:xmax])
+			ymax = max(self.l.get_ydata()[xmin:xmax])		
 			self.axes.set_ylim(ymin-10,ymax+2)
-			print "ylimits" ,ymin,ymax
 		except:
-			pass	
+			pass
 		self.updatePlot()
 	def updateData(self,xd,yd):
 		self.dataLength = len(xd)
@@ -74,23 +67,26 @@ class mplCanvas(FigureCanvas):
 		self.l.set_ydata(yd)
     		self.l.set_xdata(xd)
 		self.axes.set_ylim(min(yd)-10,max(yd)+2)
+		##Set slider class variables
+		sAx.dataLength= self.dataLength
+		sAx.xlimMax = np.max(self.l.get_xdata())
 		self.updatePlot()
 	def updatePlot(self,**kwargs):
 		self.axes.relim()
 		self.axes.autoscale_view(scalex=False)
-		#self.axes.set_xlim(100)
 		#self.draw()
 		self.fig.canvas.draw()
-	def integrateData(self):
-		integral = 0
+	def integrateData(self,sliderValue=None):
+		t1,t2 = sorted([self.sax4.gv(),self.sax5.gv()])
+		self.i1.set_xdata(t1)
+		self.i2.set_xdata(t2)
 		try:
-			integralMinIndex = int(self.sintmin.val*self.dataLength/100)
-			integralMaxIndex = int(self.sintmax.val*self.dataLength/100)
+			integral = 0
+			imin,imax = sorted([self.sax4.gi(),self.sax5.gi()])
 			timeSlice = self.l.get_xdata()[1]-self.l.get_xdata()[0]
-			integral = self.l.get_ydata()[integralMinIndex:integralMaxIndex] 
+			integral = self.l.get_ydata()[imin:imax]
 			integral = np.array(integral)-self.baseLine
 			integral = np.sum(integral)*timeSlice	
-			#integral = timeSlice*np.array(sum(self.l.get_ydata()[integralMinIndex:integralMaxIndex]))
 		except:
 			pass
 		self.iText.set_text("Integral:"+str(float(integral)))
@@ -100,4 +96,4 @@ if __name__ == "__main__":
     mc.show()
     mc.updateData(range(10),range(50,60))
     mc.draw()
-
+				
