@@ -26,6 +26,7 @@ class mplCanvas(FigureCanvas):
 		#fig,self.axes = plt.subplots()
 		FigureCanvas.__init__(self,self.fig)
 		self.axes = self.fig.add_subplot(111)
+		self.axes.set_xlabel("Time(seconds)")
 		self.fig.subplots_adjust(left=0.1, bottom=0.25)
 		self.l, = self.axes.plot(range(10),range(10,20))
 		self.i1 = self.axes.axvline(x=0,color="red") #integral marker 1

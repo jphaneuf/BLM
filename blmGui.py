@@ -4,9 +4,14 @@ from abfEda import dataManager
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from figure import mplCanvas
-#2 add outputs
-#3 baseline?
-#4 text timeslicer
+#To Do!!!
+#y axis zoom
+#Abs value for integral?
+#multiple baseline and integral sliders?
+#Units on integral (nSiemen*Second)
+#Readout for integral delta T
+#Figure Export
+#data subset for plotting?  Data analysis separate from plotting perhaps...
 class comm(QtCore.QObject):
 	updateDataTrigger = QtCore.pyqtSignal()
 class dataFile(QtGui.QHBoxLayout):
@@ -45,6 +50,8 @@ class blmGui(QtGui.QWidget):
 		self.fm = fileManager()
 		self.dm = dataManager()
 		self.fm.c.updateDataTrigger.connect(self.updateEverything)
+		self.snapshotButton = QtGui.QPushButton("Save Figure")
+		self.snapshotButton.clicked.connect(self.saveFigure)
 		hbox = QtGui.QHBoxLayout()
 		hbox.addStretch(1)
 		vbox=QtGui.QVBoxLayout()
@@ -52,6 +59,7 @@ class blmGui(QtGui.QWidget):
 		vbox.addLayout(hbox)
 		vbox.addLayout(self.fm)
 		vbox.addWidget(self.mpl)
+		vbox.addWidget(self.snapshotButton)
 		self.setLayout(vbox)
 		self.setGeometry(300,300,700,500)
 		self.setWindowTitle('BLM Analysis')
@@ -61,6 +69,9 @@ class blmGui(QtGui.QWidget):
 		self.updatePlot()
 	def updatePlot(self):
 		self.mpl.updateData(self.dm.timeVector,self.dm.combinedSignal)
+	def saveFigure(self):
+		fileName = str(QtGui.QFileDialog.getSaveFileName(QtGui.QMainWindow(),'Save Figure As','./',filter='*.png'))
+		self.mpl.fig.savefig(fileName)
 def main():
 	app = QtGui.QApplication(sys.argv)
 	ex = blmGui()
