@@ -19,7 +19,7 @@ class sAx(mpAx):
 		return int(self.slider.val*self.dataLength/100)
 	def gv(self):
 		return self.slider.val*self.xlimMax/100
-		
+
 class mplCanvas(FigureCanvas):
 	def __init__(self):
 		self.fig = Figure()
@@ -27,15 +27,28 @@ class mplCanvas(FigureCanvas):
 		FigureCanvas.__init__(self,self.fig)
 		self.axes = self.fig.add_subplot(111)
 		self.axes.set_xlabel("Time(seconds)")
-		self.fig.subplots_adjust(left=0.1, bottom=0.25)
+		self.fig.subplots_adjust(left=0.1, bottom=0.4)
 		self.l, = self.axes.plot(range(10),range(10,20))
 		self.i1 = self.axes.axvline(x=0,color="red") #integral marker 1
 		self.i2 = self.axes.axvline(x=0,color="red") #integral marker 2
 		self.baseLineGrabber = self.axes.axvline(x=0,color="green") #where to get baseline average
 		self.axes.hold(False)
 		self.createSliders()
+		self.createBaselineControls()
 		self.dataLength = 10
 		self.iText = self.fig.text(0.12,0.8,"Integral:0")		
+	def createBaselineControls(self):
+		self.bax1 = mpAx(self.fig,rect=(0.25,0.14,0.1,0.03))
+		self.fig.add_axes(self.bax1)
+		self.butt1 = Button(self.bax1,'+')	
+		self.bax2 = mpAx(self.fig,rect=(0.35,0.14,0.1,0.03))
+		self.fig.add_axes(self.bax2)
+		self.butt2 = Button(self.bax2,'-')	
+		self.bax3 = mpAx(self.fig,rect=(0.45,0.14,0.1,0.03))
+		self.fig.add_axes(self.bax3)
+		self.bax3.set_axis_off()
+		self.selectedBlineText = self.bax3.text(0.2,0.075,"yay")
+		self.selectedBlineText.set_text("neigh")
 	def createSliders(self):	
 		self.sax1 = sAx(self.fig,0.1,"tmin %",self.updateXlim)
 		self.fig.add_axes(self.sax1)	
@@ -57,8 +70,9 @@ class mplCanvas(FigureCanvas):
 		try:
 			xmin,xmax = sorted([self.sax1.gi(),self.sax2.gi()])		
 			ymin = min(self.l.get_ydata()[xmin:xmax])
-			ymax = max(self.l.get_ydata()[xmin:xmax])		
-			self.axes.set_ylim(ymin-10,ymax+2)
+			ymax = max(self.l.get_ydata()[xmin:xmax])
+			padding = 0.1*(ymax - ymin)
+			self.axes.set_ylim(ymin-padding,ymax+padding)
 		except:
 			pass
 		self.updatePlot()
