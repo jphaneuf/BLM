@@ -23,30 +23,55 @@ class integralWindow:
 	###has baseline, integral windows
 	def __init__(self,axes):
 		self.axes = axes
-		self.lines = {"i0":0,"i1":0,"bl":0}
-		self.i1 = axes.axvline(x=1.4,color="red")
-		self.i2 = axes.axvline(x=1.5,color="red")
-		self.blg = axes.axvline(x=1.6,color="green")#baselinegrabber
+		self.indices = {"i1":0,"i2":0,"blg":0}
+		self.lines = {}
+		self.lines["i1"] = axes.axvline(x=1.4,color="red")
+		self.lines["i2"] = axes.axvline(x=1.5,color="red")
+		self.lines["blg"] = axes.axvline(x=1.6,color="green")#baselinegrabber
+		for l in self.lines.values():
+			l.set_xdata(0)
+	def unHighlight(self):
+		self.lines["i1"].set_color("sienna")
+		self.lines["i2"].set_color("sienna")
+		self.lines["blg"].set_color("darkslategray")
+	def highlight(self):
+		self.lines["i1"].set_color("red")
+		self.lines["i2"].set_color("red")
+		self.lines["blg"].set_color("green")
 class integralWindowManager:
-	def __init__(self,axes,textAxis):
+	def __init__(self,axes,textAxis,nbAxis,timeDeltaAxis):
 		self.axes = axes
 		self.iws = [integralWindow(self.axes)]#integral windows
 		self.selectedWindow = 0
 		self.selectedBlineText = textAxis.text(0.2,0.075,str(0))
+		self.nWindowsText = nbAxis.text(0,0.075,"windows")
+		self.integralWindowText = timeDeltaAxis.text(0.2,0.075,"i window")
+		self.updateText()
 	def highlightWindow(self,w):
-		pass
+		for lineSet in self.iws:
+			lineSet.unHighlight()
+		self.iws[w].highlight()
+	def updateText(self):
+		self.selectedBlineText.set_text(str(self.selectedWindow+1))
+		self.nWindowsText.set_text("of "+str(len(self.iws)) +" windows")
+		l = self.iws[self.selectedWindow].lines
+		integralTimeDelta =  str(abs(l["i1"].get_xdata()-l["i2"].get_xdata()))
+		self.integralWindowText.set_text("Integral Window:"+integralTimeDelta+"S")
 	def nextWindow(self,v=0):
 		self.selectedWindow +=1
 		if self.selectedWindow > len(self.iws)-1:
 			self.iws.append(integralWindow(self.axes))
-		self.selectedBlineText.set_text(str(self.selectedWindow))
+		self.updateText()
+		self.highlightWindow(self.selectedWindow)
 	def prevWindow(self,v=0):
 		self.selectedWindow = self.selectedWindow-1 if self.selectedWindow >0 else 0
-		self.selectedBlineText.set_text(str(self.selectedWindow))
+		self.updateText()
+		self.highlightWindow(self.selectedWindow)
 	def setVLines(self,tmin,tmax,tbl):
-		self.iws[self.selectedWindow].i1.set_xdata(tmin)
-		self.iws[self.selectedWindow].i2.set_xdata(tmax)
-		self.iws[self.selectedWindow].blg.set_xdata(tbl)
+		self.iws[self.selectedWindow].lines["i1"].set_xdata(tmin)
+		self.iws[self.selectedWindow].lines["i2"].set_xdata(tmax)
+		self.iws[self.selectedWindow].lines["blg"].set_xdata(tbl)
+		self.updateText()
 class mplCanvas(FigureCanvas):
 	def __init__(self):
 		self.fig = Figure()
@@ -74,7 +99,16 @@ class mplCanvas(FigureCanvas):
 		self.bax3 = mpAx(self.fig,rect=(0.45,0.14,0.1,0.03))
 		self.fig.add_axes(self.bax3)
 		self.bax3.set_axis_off()
-		self.iwm = integralWindowManager(self.axes,self.bax3)
+		self.nbax = mpAx(self.fig,rect=(0.5,0.14,0.1,0.03))# #baseline
+		self.fig.add_axes(self.nbax)
+		self.nbax.set_axis_off()
+		self.dt = mpAx(self.fig,rect=(0.6,0.14,0.1,0.03))# #baseline
+		self.fig.add_axes(self.dt)
+		self.dt.set_axis_off()
+		self.bmean = mpAx(self.fig,rect=(0.95,0.14,0.1,0.03))# #baseline
+		self.fig.add_axes(self.bmean)
+		self.bmean.set_axis_off()
+		self.iwm = integralWindowManager(self.axes,self.bax3,self.nbax,self.dt)
 		self.butt1.on_clicked(self.iwm.nextWindow)
 		self.butt2.on_clicked(self.iwm.prevWindow)
 	def createSliders(self):	
@@ -94,6 +128,8 @@ class mplCanvas(FigureCanvas):
 		whereAt = self.sax3.gi()
 		self.baseLine = np.mean(self.l.get_ydata()[whereAt-5:whereAt])
 		"""
+		#self.nWindowsText = nbAxis.text(0,0.075,"windows")
+		#self
 		self.integrateData()
 	def updateXlim(self,sliderValue):
 		self.axes.set_xlim(sorted([self.sax1.gv(),self.sax2.gv()]))
