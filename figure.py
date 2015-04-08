@@ -19,7 +19,34 @@ class sAx(mpAx):
 		return int(self.slider.val*self.dataLength/100)
 	def gv(self):
 		return self.slider.val*self.xlimMax/100
-
+class integralWindow:
+	###has baseline, integral windows
+	def __init__(self,axes):
+		self.axes = axes
+		self.lines = {"i0":0,"i1":0,"bl":0}
+		self.i1 = axes.axvline(x=1.4,color="red")
+		self.i2 = axes.axvline(x=1.5,color="red")
+		self.blg = axes.axvline(x=1.6,color="green")#baselinegrabber
+class integralWindowManager:
+	def __init__(self,axes,textAxis):
+		self.axes = axes
+		self.iws = [integralWindow(self.axes)]#integral windows
+		self.selectedWindow = 0
+		self.selectedBlineText = textAxis.text(0.2,0.075,str(0))
+	def highlightWindow(self,w):
+		pass
+	def nextWindow(self,v=0):
+		self.selectedWindow +=1
+		if self.selectedWindow > len(self.iws)-1:
+			self.iws.append(integralWindow(self.axes))
+		self.selectedBlineText.set_text(str(self.selectedWindow))
+	def prevWindow(self,v=0):
+		self.selectedWindow = self.selectedWindow-1 if self.selectedWindow >0 else 0
+		self.selectedBlineText.set_text(str(self.selectedWindow))
+	def setVLines(self,tmin,tmax,tbl):
+		self.iws[self.selectedWindow].i1.set_xdata(tmin)
+		self.iws[self.selectedWindow].i2.set_xdata(tmax)
+		self.iws[self.selectedWindow].blg.set_xdata(tbl)
 class mplCanvas(FigureCanvas):
 	def __init__(self):
 		self.fig = Figure()
@@ -38,7 +65,7 @@ class mplCanvas(FigureCanvas):
 		self.dataLength = 10
 		self.iText = self.fig.text(0.12,0.8,"Integral:0")		
 	def createBaselineControls(self):
-		self.bax1 = mpAx(self.fig,rect=(0.25,0.14,0.1,0.03))
+		self.bax1 = mpAx(self.fig,rect=(0.25,0.14,0.1,0.03))#button axes
 		self.fig.add_axes(self.bax1)
 		self.butt1 = Button(self.bax1,'+')	
 		self.bax2 = mpAx(self.fig,rect=(0.35,0.14,0.1,0.03))
@@ -47,8 +74,9 @@ class mplCanvas(FigureCanvas):
 		self.bax3 = mpAx(self.fig,rect=(0.45,0.14,0.1,0.03))
 		self.fig.add_axes(self.bax3)
 		self.bax3.set_axis_off()
-		self.selectedBlineText = self.bax3.text(0.2,0.075,"yay")
-		self.selectedBlineText.set_text("neigh")
+		self.iwm = integralWindowManager(self.axes,self.bax3)
+		self.butt1.on_clicked(self.iwm.nextWindow)
+		self.butt2.on_clicked(self.iwm.prevWindow)
 	def createSliders(self):	
 		self.sax1 = sAx(self.fig,0.1,"tmin %",self.updateXlim)
 		self.fig.add_axes(self.sax1)	
@@ -61,9 +89,11 @@ class mplCanvas(FigureCanvas):
 		self.sax5 = sAx(self.fig,0.0,"integral max",self.integrateData)
 		self.fig.add_axes(self.sax5)
 	def calculateBaseline(self,value):
+		"""
 		self.baseLineGrabber.set_xdata(self.sax3.gv())
 		whereAt = self.sax3.gi()
 		self.baseLine = np.mean(self.l.get_ydata()[whereAt-5:whereAt])
+		"""
 		self.integrateData()
 	def updateXlim(self,sliderValue):
 		self.axes.set_xlim(sorted([self.sax1.gv(),self.sax2.gv()]))
@@ -93,8 +123,11 @@ class mplCanvas(FigureCanvas):
 		self.fig.canvas.draw()
 	def integrateData(self,sliderValue=None):
 		t1,t2 = sorted([self.sax4.gv(),self.sax5.gv()])
-		self.i1.set_xdata(t1)
-		self.i2.set_xdata(t2)
+		tbl = self.sax3.gv()
+		self.iwm.setVLines(t1,t2,tbl)
+		#self.i1.set_xdata(t1)
+		#self.i2.set_xdata(t2)
+"""		
 		try:
 			integral = 0
 			imin,imax = sorted([self.sax4.gi(),self.sax5.gi()])
@@ -105,10 +138,10 @@ class mplCanvas(FigureCanvas):
 		except:
 			pass
 		self.iText.set_text("Integral:"+str(float(integral)))
+		"""
 ##Test:
 if __name__ == "__main__":
     mc = mplCanvas()
     mc.show()
     mc.updateData(range(10),range(50,60))
     mc.draw()
-				
