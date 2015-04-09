@@ -38,5 +38,5 @@ class dataManager:
 if __name__ == "__main__":
 	dm = dataManager()
 	#dm.updateCombinedSignal(["/home/joe/knowledge/blm/BLM Membrane Example/Recording 2, 50Hz lowpass.abf"])
-	dm.updateCombinedSignal(["C:\Users\jphaneuf\Downloads\Recording 1.abf"]) 
- 
+	#dm.updateCombinedSignal(["C:\Users\jphaneuf\Downloads\Recording 1.abf"]) 
+	dm.updateCombinedSignal(["C:\Users/joe/knowledge/blm/BLM Membrane Example/Recording 1, 50Hz lowpass.abf"]) 

@@ -38,6 +38,10 @@ class integralWindow:
 		self.lines["i1"].set_color("red")
 		self.lines["i2"].set_color("red")
 		self.lines["blg"].set_color("green")
+	def getTimes(self): #get all timeStamps
+		return [self.lines["i1"].get_xdata(),
+				self.lines["i2"].get_xdata(),
+				self.lines["blg"].get_xdata()]
 class integralWindowManager:
 	def __init__(self,axes,textAxis,nbAxis,timeDeltaAxis):
 		self.axes = axes
@@ -55,8 +59,8 @@ class integralWindowManager:
 		self.selectedBlineText.set_text(str(self.selectedWindow+1))
 		self.nWindowsText.set_text("of "+str(len(self.iws)) +" windows")
 		l = self.iws[self.selectedWindow].lines
-		integralTimeDelta =  str(abs(l["i1"].get_xdata()-l["i2"].get_xdata()))
-		self.integralWindowText.set_text("Integral Window:"+integralTimeDelta+"S")
+		integralTimeDelta =  str(float(abs(l["i1"].get_xdata()-l["i2"].get_xdata())))
+		self.integralWindowText.set_text("Integral dT:"+integralTimeDelta+"s")
 	def nextWindow(self,v=0):
 		self.selectedWindow +=1
 		if self.selectedWindow > len(self.iws)-1:
@@ -72,6 +76,13 @@ class integralWindowManager:
 		self.iws[self.selectedWindow].lines["i2"].set_xdata(tmax)
 		self.iws[self.selectedWindow].lines["blg"].set_xdata(tbl)
 		self.updateText()
+	def getBaselineTime(self):
+		return self.iws[self.selectedWindow].lines["blg"].get_xdata()
+	def getTimes(self):
+		timeStamps = []
+		for windowSet in self.iws:
+			timeStamps.append(windowSet.getTimes())
+		return timeStamps
 class mplCanvas(FigureCanvas):
 	def __init__(self):
 		self.fig = Figure()
@@ -79,6 +90,7 @@ class mplCanvas(FigureCanvas):
 		FigureCanvas.__init__(self,self.fig)
 		self.axes = self.fig.add_subplot(111)
 		self.axes.set_xlabel("Time(seconds)")
+		self.axes.set_ylabel("pA")
 		self.fig.subplots_adjust(left=0.1, bottom=0.4)
 		self.l, = self.axes.plot(range(10),range(10,20))
 		self.i1 = self.axes.axvline(x=0,color="red") #integral marker 1
@@ -90,24 +102,29 @@ class mplCanvas(FigureCanvas):
 		self.dataLength = 10
 		self.iText = self.fig.text(0.12,0.8,"Integral:0")		
 	def createBaselineControls(self):
-		self.bax1 = mpAx(self.fig,rect=(0.25,0.14,0.1,0.03))#button axes
+		self.bax1 = mpAx(self.fig,rect=(0.15,0.14,0.1,0.03))#button axes
 		self.fig.add_axes(self.bax1)
 		self.butt1 = Button(self.bax1,'+')	
-		self.bax2 = mpAx(self.fig,rect=(0.35,0.14,0.1,0.03))
+		self.bax2 = mpAx(self.fig,rect=(0.25,0.14,0.1,0.03))
 		self.fig.add_axes(self.bax2)
 		self.butt2 = Button(self.bax2,'-')	
-		self.bax3 = mpAx(self.fig,rect=(0.45,0.14,0.1,0.03))
+		self.bax3 = mpAx(self.fig,rect=(0.35,0.14,0.1,0.03))
 		self.fig.add_axes(self.bax3)
 		self.bax3.set_axis_off()
-		self.nbax = mpAx(self.fig,rect=(0.5,0.14,0.1,0.03))# #baseline
+		self.nbax = mpAx(self.fig,rect=(0.45,0.14,0.1,0.03))# number of windows
 		self.fig.add_axes(self.nbax)
 		self.nbax.set_axis_off()
-		self.dt = mpAx(self.fig,rect=(0.6,0.14,0.1,0.03))# #baseline
+		self.dt = mpAx(self.fig,rect=(0.6,0.14,0.1,0.03))#delta t
 		self.fig.add_axes(self.dt)
 		self.dt.set_axis_off()
-		self.bmean = mpAx(self.fig,rect=(0.95,0.14,0.1,0.03))# #baseline
+		self.bmean = mpAx(self.fig,rect=(0.55,0.2,0.1,0.03))# #baseline
 		self.fig.add_axes(self.bmean)
 		self.bmean.set_axis_off()
+		self.intTotal = mpAx(self.fig,rect=(0.1,0.2,0.1,0.03))# #baseline
+		self.fig.add_axes(self.intTotal)
+		self.intTotal.set_axis_off()
+		self.baselineValueText = self.bmean.text(0,0,"baseline")
+		self.integralTotalText = self.intTotal.text(0,0,"integral Total")
 		self.iwm = integralWindowManager(self.axes,self.bax3,self.nbax,self.dt)
 		self.butt1.on_clicked(self.iwm.nextWindow)
 		self.butt2.on_clicked(self.iwm.prevWindow)
@@ -123,6 +140,12 @@ class mplCanvas(FigureCanvas):
 		self.sax5 = sAx(self.fig,0.0,"integral max",self.integrateData)
 		self.fig.add_axes(self.sax5)
 	def calculateBaseline(self,value):
+		baselineTime = self.iwm.getBaselineTime()
+		baselineIndex = int(baselineTime/self.timeSlice)
+		baselineMin,baselineMax = [max(baselineIndex-5,0),min(baselineIndex+5,self.dataLength-1)]
+		baselineValue = np.mean(self.l.get_ydata()[baselineMin:baselineMax])
+		self.baselineValueText.set_text("baseline:"+ str(baselineValue)+"pA")
+		
 		"""
 		self.baseLineGrabber.set_xdata(self.sax3.gv())
 		whereAt = self.sax3.gi()
@@ -152,15 +175,30 @@ class mplCanvas(FigureCanvas):
 		sAx.dataLength= self.dataLength
 		sAx.xlimMax = np.max(self.l.get_xdata())
 		self.updatePlot()
+		self.timeSlice = self.l.get_xdata()[1]-self.l.get_xdata()[0]
 	def updatePlot(self,**kwargs):
 		self.axes.relim()
 		self.axes.autoscale_view(scalex=False)
 		#self.draw()
 		self.fig.canvas.draw()
 	def integrateData(self,sliderValue=None):
+		#self.integralTotalText = self.intTotal.text(0,0,"integral Total")
 		t1,t2 = sorted([self.sax4.gv(),self.sax5.gv()])
 		tbl = self.sax3.gv()
 		self.iwm.setVLines(t1,t2,tbl)
+		integral = 0
+		for integralSet in self.iwm.getTimes():
+			imin = int(integralSet[0]/self.timeSlice)
+			imax = int(integralSet[1]/self.timeSlice)
+			baselineTime = integralSet[2]
+			baselineIndex = int(baselineTime/self.timeSlice)
+			baselineMin,baselineMax = [max(baselineIndex-5,0),min(baselineIndex+5,self.dataLength-1)]
+			baselineValue = np.mean(self.l.get_ydata()[baselineMin:baselineMax])			
+			_ = self.l.get_ydata()[imin:imax]
+			_ = np.array(_)-baselineValue
+			_ = np.sum(_)*float(self.timeSlice)
+			integral += abs(_)
+		self.integralTotalText.set_text("total integral:"+str(integral)+"pA*Seconds")
 		#self.i1.set_xdata(t1)
 		#self.i2.set_xdata(t2)
 """		
