@@ -81,6 +81,7 @@ class integralWindowManager:
 	def getTimes(self):
 		timeStamps = []
 		for windowSet in self.iws:
+			print windowSet
 			timeStamps.append(windowSet.getTimes())
 		return timeStamps
 class mplCanvas(FigureCanvas):
