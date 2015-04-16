@@ -52,6 +52,7 @@ class blmGui(QtGui.QWidget):
 		self.snapshotButton.clicked.connect(self.saveFigure)
 		self.goButton = QtGui.QPushButton("Compute Final Integral")
 		self.goButton.clicked.connect(self.computeFinalIntegral)
+		self.totalIntegralLabel = QtGui.QLabel("Total Integral: 0nSiemen*Seconds",self)
 		hbox = QtGui.QHBoxLayout()
 		hbox.addStretch(1)
 		vbox=QtGui.QVBoxLayout()
@@ -61,6 +62,7 @@ class blmGui(QtGui.QWidget):
 		vbox.addWidget(self.mpl)
 		vbox.addWidget(self.snapshotButton)
 		vbox.addWidget(self.goButton)
+		vbox.addWidget(self.totalIntegralLabel)
 		self.setLayout(vbox)
 		self.setGeometry(300,300,700,500)
 		self.setWindowTitle('BLM Analysis')
@@ -74,7 +76,8 @@ class blmGui(QtGui.QWidget):
 		fileName = str(QtGui.QFileDialog.getSaveFileName(QtGui.QMainWindow(),'Save Figure As','./',filter='*.png'))
 		self.mpl.fig.savefig(fileName)
 	def computeFinalIntegral(self):
-		self.dm.computeFinalIntegral(self.mpl.iwm.getTimes())
+		totalIntegral = self.dm.computeFinalIntegral(self.mpl.iwm.getTimes())
+		self.totalIntegralLabel.setText("Total Integral:"+str(totalIntegral)+" nSiemen*Seconds")
 def main():
 	app = QtGui.QApplication(sys.argv)
 	ex = blmGui()
