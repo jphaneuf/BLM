@@ -35,13 +35,16 @@ class dataManager:
 		pass
 	def computeFinalIntegral(self,timeStamps):
 		"""time stamps for baseline grabs and integral windows are used
-		to compute the final integral.  These values are grabbed from matplotlib figure"""
+		to compute the final integral.  These values are grabbed from matplotlib figure.
+		Includes applied voltage entry from user input dialog box"""
 		noiseThreshold = 3#Threshold for integration,in nSiemens 
 		totalIntegral = 0
 		for windowSet in timeStamps:
 			print "time stamps:",windowSet
-			it1,it2,ib = [int(x/self.samplePeriod) for x in windowSet] #indices for baselineand integrals
+			it1,it2,ib,av = [int(x/self.samplePeriod) for x in windowSet] #indices for baselineand integrals
+			av = windowSet[3] #applied voltge in mV			
 			print "indices:",it1,it2,ib
+			print "applied Voltage:", av
 			it1,it2 = sorted([it1,it2])#make sure it2>it1
 			#get baseline Conductance @ index
 			baselineConductance = np.mean(self.combinedConductance[max(ib-10,0):min(ib+10,len(self.combinedConductance))])

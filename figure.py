@@ -3,8 +3,11 @@ from matplotlib import pyplot as plt
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.widgets import Slider,Button
 import matplotlib.text as mtext
+import sys
 from matplotlib.axes import Axes as mpAx
 import numpy as np
+from PyQt4 import QtGui,QtCore
+
 
 class sAx(mpAx):
 	##Slider axis: joins slider and axis into one
@@ -21,8 +24,9 @@ class sAx(mpAx):
 		return self.slider.val*self.xlimMax/100
 class integralWindow:
 	###has baseline, integral windows
-	def __init__(self,axes):
+	def __init__(self,axes,appliedVoltage):
 		self.axes = axes
+		self.appliedVoltage = appliedVoltage
 		self.indices = {"i1":0,"i2":0,"blg":0}
 		self.lines = {}
 		self.lines["i1"] = axes.axvline(x=1.4,color="red")
@@ -41,16 +45,18 @@ class integralWindow:
 	def getTimes(self): #get all timeStamps
 		return [self.lines["i1"].get_xdata(),
 				self.lines["i2"].get_xdata(),
-				self.lines["blg"].get_xdata()]
+				self.lines["blg"].get_xdata(),
+				self.appliedVoltage]
 class integralWindowManager:
-	def __init__(self,axes,textAxis,nbAxis,timeDeltaAxis):
+	def __init__(self,axes,textAxis,nbAxis,timeDeltaAxis,mainWidget):
+		self.mainWidget = mainWidget #main Gui Widget, need for popup box
 		self.axes = axes
-		self.iws = [integralWindow(self.axes)]#integral windows
-		self.selectedWindow = 0
+		self.iws = []#[integralWindow(self.axes)]#integral windows
+		self.selectedWindow = -1
 		self.selectedBlineText = textAxis.text(0.2,0.075,str(0))
 		self.nWindowsText = nbAxis.text(0,0.075,"windows")
 		self.integralWindowText = timeDeltaAxis.text(0.2,0.075,"i window")
-		self.updateText()
+		#self.updateText()
 	def highlightWindow(self,w):
 		for lineSet in self.iws:
 			lineSet.unHighlight()
@@ -64,7 +70,8 @@ class integralWindowManager:
 	def nextWindow(self,v=0):
 		self.selectedWindow +=1
 		if self.selectedWindow > len(self.iws)-1:
-			self.iws.append(integralWindow(self.axes))
+			appliedVoltage,ok = QtGui.QInputDialog.getText(self.mainWidget,"Input Dialog","Enter Applied Voltage (mV):")
+			self.iws.append(integralWindow(self.axes,float(appliedVoltage)))
 		self.updateText()
 		self.highlightWindow(self.selectedWindow)
 	def prevWindow(self,v=0):
@@ -85,8 +92,9 @@ class integralWindowManager:
 			timeStamps.append(windowSet.getTimes())
 		return timeStamps
 class mplCanvas(FigureCanvas):
-	def __init__(self):
+	def __init__(self,mainWidget):
 		self.fig = Figure()
+		self.mainWidget = mainWidget
 		#fig,self.axes = plt.subplots()
 		FigureCanvas.__init__(self,self.fig)
 		self.axes = self.fig.add_subplot(111)
@@ -126,7 +134,7 @@ class mplCanvas(FigureCanvas):
 		self.intTotal.set_axis_off()
 		self.baselineValueText = self.bmean.text(0,0,"baseline")
 		self.integralTotalText = self.intTotal.text(0,0,"integral Total")
-		self.iwm = integralWindowManager(self.axes,self.bax3,self.nbax,self.dt)
+		self.iwm = integralWindowManager(self.axes,self.bax3,self.nbax,self.dt,self.mainWidget)
 		self.butt1.on_clicked(self.iwm.nextWindow)
 		self.butt2.on_clicked(self.iwm.prevWindow)
 	def createSliders(self):	
@@ -215,8 +223,25 @@ class mplCanvas(FigureCanvas):
 		self.iText.set_text("Integral:"+str(float(integral)))
 		"""
 ##Test:
+class App(QtGui.QApplication):
+    def __init__(self, *args):
+        QtGui.QApplication.__init__(self, *args)
+        self.main = QtGui.QMainWindow()    
+        self.main.show()
+        mc = mplCanvas(self.main)
+        mc.show()
+        mc.updateData(range(10),range(50,60))
+        mc.draw()
+        self.connect(self, QtCore.SIGNAL("lastWindowClosed()"), self.byebye )
+
+    def byebye( self ):
+        self.exit(0)
+
+def main(args):
+    global app
+    app = App(args)
+    app.exec_()
+
 if __name__ == "__main__":
-    mc = mplCanvas()
-    mc.show()
-    mc.updateData(range(10),range(50,60))
-    mc.draw()
+    main(sys.argv)
+

@@ -44,7 +44,7 @@ class blmGui(QtGui.QWidget):
 		super(blmGui,self).__init__()
 		self.initUI()
 	def initUI(self):
-		self.mpl = mplCanvas()
+		self.mpl = mplCanvas(self) #passes self as main widget, used for popup boxes
 		self.fm = fileManager()
 		self.dm = dataManager()
 		self.fm.c.updateDataTrigger.connect(self.updateEverything)
