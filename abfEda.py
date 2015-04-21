@@ -44,8 +44,8 @@ class dataManager:
 			#get baseline Conductance @ index
 			baselineConductance = np.mean(self.combinedSignal[max(ib-10,0):min(ib+10,len(self.combinedSignal))])/av
 			integral = self.combinedSignal[it1:it2]/av- baselineConductance
-			pylab.plot(integral)
-			pylab.show()
+			#pylab.plot(integral)
+			#pylab.show()
 			integral = [i if i > noiseThreshold else 0 for i in integral] # Clip all below noise
 			integral = np.sum(integral)*self.samplePeriod
 			totalIntegral += float(integral)

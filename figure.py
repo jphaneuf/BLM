@@ -47,6 +47,10 @@ class integralWindow:
 				self.lines["i2"].get_xdata(),
 				self.lines["blg"].get_xdata(),
 				self.appliedVoltage]
+	def kill(self):
+		self.lines["i1"].remove()
+		self.lines["i2"].remove()
+		self.lines["blg"].remove()
 class integralWindowManager:
 	def __init__(self,axes,textAxis,nbAxis,timeDeltaAxis,mainWidget):
 		self.mainWidget = mainWidget #main Gui Widget, need for popup box
@@ -91,6 +95,12 @@ class integralWindowManager:
 			print windowSet
 			timeStamps.append(windowSet.getTimes())
 		return timeStamps
+	def removeWindow(self,x):
+		if self.iws:
+			self.iws[self.selectedWindow].kill()
+			self.iws.pop(self.selectedWindow)
+			self.selectedWindow = min(self.selectedWindow,len(self.iws)-1)
+			self.updateText()
 class mplCanvas(FigureCanvas):
 	def __init__(self,mainWidget):
 		self.fig = Figure()
@@ -120,6 +130,9 @@ class mplCanvas(FigureCanvas):
 		self.bax3 = mpAx(self.fig,rect=(0.35,0.14,0.1,0.03))
 		self.fig.add_axes(self.bax3)
 		self.bax3.set_axis_off()
+		self.bax4 = mpAx(self.fig,rect=(0.05,0.14,0.1,0.03))
+		self.fig.add_axes(self.bax4)
+		self.removeButton = Button(self.bax4,'rmv')
 		self.nbax = mpAx(self.fig,rect=(0.45,0.14,0.1,0.03))# number of windows
 		self.fig.add_axes(self.nbax)
 		self.nbax.set_axis_off()
@@ -137,6 +150,7 @@ class mplCanvas(FigureCanvas):
 		self.iwm = integralWindowManager(self.axes,self.bax3,self.nbax,self.dt,self.mainWidget)
 		self.butt1.on_clicked(self.iwm.nextWindow)
 		self.butt2.on_clicked(self.iwm.prevWindow)
+		self.removeButton.on_clicked(self.iwm.removeWindow)
 	def createSliders(self):	
 		self.sax1 = sAx(self.fig,0.1,"tmin %",self.updateXlim)
 		self.fig.add_axes(self.sax1)	
