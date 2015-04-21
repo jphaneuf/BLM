@@ -8,18 +8,15 @@ from figure import mplCanvas
 class comm(QtCore.QObject):
 	updateDataTrigger = QtCore.pyqtSignal()
 class dataFile(QtGui.QHBoxLayout):
-	def __init__(self,fileName,appliedVoltage=0):
+	def __init__(self,fileName):
 		super(dataFile,self).__init__()
 		self.fileName = fileName
 		self.addStretch(1)
 		self.wg = QtGui.QWidget()
 		self.lbl = QtGui.QLabel(fileName,self.wg)
-		self.appliedVoltage = appliedVoltage
-		self.appliedVoltageLabel = QtGui.QLabel("applied Voltage:"+str(appliedVoltage)+"mV",self.wg)
 		self.pc = QtGui.QCheckBox("yes",self.wg)		
 		self.addWidget(self.lbl) 
 		self.addWidget(self.pc)
-		self.addWidget(self.appliedVoltageLabel)
 class fileManager(QtGui.QVBoxLayout):
 	def __init__(self):
 		super(fileManager,self).__init__()
@@ -30,14 +27,12 @@ class fileManager(QtGui.QVBoxLayout):
 		self.c = comm()
 	def addFile(self):
 		fileName = QtGui.QFileDialog.getOpenFileName(QtGui.QMainWindow(),'Open file','./')
-		appliedVoltage,ok = QtGui.QInputDialog.getText(QtGui.QMainWindow(),'Input Dialog','Enter Applied Voltage(mV):')
-		x = dataFile(fileName,appliedVoltage=appliedVoltage)
+		x = dataFile(fileName)
 		x.pc.stateChanged.connect(self.createPlotList)
 		self.addLayout(x)
 		self.files.append(x)
 	def createPlotList(self):
 		self.plotList = [x.fileName for x in self.files if x.pc.isChecked()]
-		self.appliedVoltageList = [x.appliedVoltage for x in self.files if x.pc.isChecked()]
 		self.c.updateDataTrigger.emit()
 class blmGui(QtGui.QWidget):
 	def __init__(self):
@@ -68,7 +63,7 @@ class blmGui(QtGui.QWidget):
 		self.setWindowTitle('BLM Analysis')
 		self.show()
 	def updateEverything(self):
-		self.dm.updateCombinedSignal(self.fm.plotList,self.fm.appliedVoltageList)
+		self.dm.updateCombinedSignal(self.fm.plotList)
 		self.updatePlot()
 	def updatePlot(self):
 		self.mpl.updateData(self.dm.timeVector,self.dm.combinedSignal)

@@ -13,14 +13,13 @@ class dataManager:
 		self.combinedSignal = np.array([])
 		self.combinedConductance = np.array([])
 		print listOfVoltages
-		for abfFile,v in zip(listOfFiles,listOfVoltages):
+		for abfFile in listOfFiles:
 			print str(abfFile)
 			x = io.AxonIO(str(abfFile))
 			blks = x.read()
 			signal = blks[0].segments[0].analogsignals[0]
 			s = np.array(signal.segment.analogsignals[0])
-			c = s/float(v)#convert to conductance using user input value for data set
-			#Note: raw signal in pA,user input applied voltage is in mV 
+			c = s#convert to conductance using user input value for data set
 			#pA/mV => nSiemens
 			self.combinedSignal = np.concatenate([self.combinedSignal,s])			 
 			self.combinedConductance = np.concatenate([self.combinedConductance,c])
