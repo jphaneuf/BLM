@@ -9,10 +9,9 @@ class dataManager:
 		self.combinedConductance = np.array([])#combined Conductance
 		self.timeVector = np.array([])
         	self.threshold = 0
-	def updateCombinedSignal(self,listOfFiles,listOfVoltages):
+	def updateCombinedSignal(self,listOfFiles):
 		self.combinedSignal = np.array([])
 		self.combinedConductance = np.array([])
-		print listOfVoltages
 		for abfFile in listOfFiles:
 			print str(abfFile)
 			x = io.AxonIO(str(abfFile))
