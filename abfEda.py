@@ -10,23 +10,20 @@ class dataManager:
 		self.timeVector = np.array([])
         	self.threshold = 0
 	def updateCombinedSignal(self,listOfFiles):
-		self.combinedSignal = np.array([])
-		self.combinedConductance = np.array([])
+		self.combinedSignal = np.array([])#clear
 		for abfFile in listOfFiles:
 			print str(abfFile)
 			x = io.AxonIO(str(abfFile))
 			blks = x.read()
 			signal = blks[0].segments[0].analogsignals[0]
 			s = np.array(signal.segment.analogsignals[0])
-			c = s#convert to conductance using user input value for data set
 			#pA/mV => nSiemens
 			self.combinedSignal = np.concatenate([self.combinedSignal,s])			 
-			self.combinedConductance = np.concatenate([self.combinedConductance,c])
 			self.samplePeriod = signal.sampling_period
 		##This data set is huge.  Just throw away some of it for now
 		reduction = 100
-		self.combinedSignal = self.combinedSignal[1::reduction]
-		self.timeVector = np.array(range(len(self.combinedSignal)))*self.samplePeriod*reduction		
+		self.combinedSignalReduced = self.combinedSignal[1::reduction]
+		self.timeVector = np.array(range(len(self.combinedSignalReduced)))*self.samplePeriod*reduction		
 	def filterSignal(self):
 		self.combinedSignal = np.abs(self.combinedSignal)
 	def integrateSignal(self):
@@ -35,7 +32,7 @@ class dataManager:
 		"""time stamps for baseline grabs and integral windows are used
 		to compute the final integral.  These values are grabbed from matplotlib figure.
 		Includes applied voltage entry from user input dialog box"""
-		noiseThreshold = 3#Threshold for integration,in nSiemens 
+		noiseThreshold = 0.5#Threshold for integration,in nSiemens 
 		totalIntegral = 0
 		for windowSet in timeStamps:
 			print "time stamps:",windowSet
@@ -45,13 +42,14 @@ class dataManager:
 			print "applied Voltage:", av
 			it1,it2 = sorted([it1,it2])#make sure it2>it1
 			#get baseline Conductance @ index
-			baselineConductance = np.mean(self.combinedConductance[max(ib-10,0):min(ib+10,len(self.combinedConductance))])
-			integral = self.combinedConductance[it1:it2]# - baselineConductance
-#			pylab.plot(integral)
-#			pylab.show()
-			integral = [i if i > noiseThreshold else 0 for i in integral]
+			baselineConductance = np.mean(self.combinedSignal[max(ib-10,0):min(ib+10,len(self.combinedSignal))])/av
+			integral = self.combinedSignal[it1:it2]/av- baselineConductance
+			pylab.plot(integral)
+			pylab.show()
+			integral = [i if i > noiseThreshold else 0 for i in integral] # Clip all below noise
 			integral = np.sum(integral)*self.samplePeriod
 			totalIntegral += float(integral)
+			print "window Integral:",integral
 		print totalIntegral
 		return totalIntegral
 

@@ -66,7 +66,7 @@ class blmGui(QtGui.QWidget):
 		self.dm.updateCombinedSignal(self.fm.plotList)
 		self.updatePlot()
 	def updatePlot(self):
-		self.mpl.updateData(self.dm.timeVector,self.dm.combinedSignal)
+		self.mpl.updateData(self.dm.timeVector,self.dm.combinedSignalReduced)
 	def saveFigure(self):
 		fileName = str(QtGui.QFileDialog.getSaveFileName(QtGui.QMainWindow(),'Save Figure As','./',filter='*.png'))
 		self.mpl.fig.savefig(fileName)
