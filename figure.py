@@ -1,7 +1,7 @@
 from matplotlib.figure import Figure
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.widgets import Slider,Button
+from matplotlib.widgets import Slider,Button,RectangleSelector
 import matplotlib.text as mtext
 import sys
 from matplotlib.axes import Axes as mpAx
@@ -119,7 +119,16 @@ class mplCanvas(FigureCanvas):
 		self.createSliders()
 		self.createBaselineControls()
 		self.dataLength = 10
-		self.iText = self.fig.text(0.12,0.8,"Integral:0")		
+		self.iText = self.fig.text(0.12,0.8,"Integral:0")
+		self.yZoomSelector = RectangleSelector(self.axes, self.yZoom, drawtype='line')
+	def yZoom(self,eclick, erelease):
+		if eclick.button == 1: #left mouse
+			ymin,ymax = sorted([eclick.ydata,erelease.ydata])
+			self.axes.set_ylim(ymin,ymax)
+			self.updatePlot()
+		elif eclick.button == 3:#right mouse
+			self.updateXlim(0)#pull xlim from sliders, resets
+			#ylim to full zoomed out in the process
 	def createBaselineControls(self):
 		self.bax1 = mpAx(self.fig,rect=(0.15,0.14,0.1,0.03))#button axes
 		self.fig.add_axes(self.bax1)
